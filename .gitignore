@@ -1,0 +1,17 @@
+# Secrets — never commit tokens or environment files
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Local artifacts
+__pycache__/
+*.pyc
+.DS_Store
+*.plugin
+
+# Fetched data / analysis output
+*.json.bak
+output/
+data/

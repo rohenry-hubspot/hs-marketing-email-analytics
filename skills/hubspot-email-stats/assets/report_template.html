@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Email Performance Report</title>
+<style>
+  :root {
+    --bg: #f7f8fa; --card: #ffffff; --ink: #1b2333; --muted: #5b6577;
+    --line: #e3e7ee; --accent: #2f6fe4; --accent2: #18a877; --warn: #d97706;
+    --bar-bg: #e9edf4;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12151c; --card: #1b202b; --ink: #e8ecf4; --muted: #98a2b5;
+      --line: #2a3242; --accent: #6ea1ff; --accent2: #3ecf9a; --warn: #f5a340;
+      --bar-bg: #232a38;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    font: 15px/1.55 -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--ink); padding: 32px 20px 60px;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; }
+  header h1 { font-size: 26px; margin-bottom: 4px; }
+  header p { color: var(--muted); }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr));
+          gap: 12px; margin: 26px 0; }
+  .kpi { background: var(--card); border: 1px solid var(--line);
+         border-radius: 12px; padding: 14px 16px; }
+  .kpi .v { font-size: 24px; font-weight: 700; }
+  .kpi .l { color: var(--muted); font-size: 12.5px; text-transform: uppercase;
+            letter-spacing: .04em; }
+  section { background: var(--card); border: 1px solid var(--line);
+            border-radius: 14px; padding: 22px 24px; margin-bottom: 22px; }
+  section h2 { font-size: 17px; margin-bottom: 4px; }
+  section .sub { color: var(--muted); font-size: 13px; margin-bottom: 16px; }
+  .feature { margin-bottom: 20px; }
+  .feature h3 { font-size: 14px; margin-bottom: 8px; }
+  .row { display: grid; grid-template-columns: 170px 1fr 110px; gap: 10px;
+         align-items: center; margin-bottom: 6px; font-size: 13.5px; }
+  .row .label { text-align: right; color: var(--muted); overflow: hidden;
+                text-overflow: ellipsis; white-space: nowrap; }
+  .track { background: var(--bar-bg); border-radius: 6px; height: 18px;
+           overflow: hidden; }
+  .fill { height: 100%; border-radius: 6px; background: var(--accent); }
+  .fill.alt { background: var(--accent2); }
+  .row .val { font-variant-numeric: tabular-nums; }
+  .row .val small { color: var(--muted); }
+  .tables { display: grid; grid-template-columns: 1fr; gap: 22px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th { text-align: left; color: var(--muted); font-weight: 600;
+       border-bottom: 1px solid var(--line); padding: 6px 8px; }
+  td { border-bottom: 1px solid var(--line); padding: 7px 8px;
+       vertical-align: top; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .insights li { margin: 0 0 10px 18px; }
+  .note { color: var(--muted); font-size: 12.5px; margin-top: 14px; }
+  .overflow { overflow-x: auto; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1 id="title"></h1>
+    <p id="subtitle"></p>
+  </header>
+  <div class="kpis" id="kpis"></div>
+  <section>
+    <h2>What drives performance</h2>
+    <p class="sub">Median click-through rate (clicks per open) by content feature.
+       Bar length = CTR; n = number of emails.</p>
+    <div id="features"></div>
+  </section>
+  <section>
+    <h2>Top performers</h2>
+    <p class="sub" id="top-sub"></p>
+    <div class="overflow"><table id="top-table"></table></div>
+  </section>
+  <section>
+    <h2>Bottom performers</h2>
+    <p class="sub" id="bottom-sub"></p>
+    <div class="overflow"><table id="bottom-table"></table></div>
+  </section>
+  <section>
+    <h2>Insights &amp; recommendations</h2>
+    <ul class="insights" id="insights"></ul>
+    <p class="note">Opens are inflated by Apple Mail Privacy Protection;
+      click-based metrics are the more reliable engagement signal. Emails with
+      small sends are excluded from feature medians.</p>
+  </section>
+</div>
+<script>
+/* Claude: replace the placeholder below with the report JSON. Schema:
+{
+  "title": str, "subtitle": str,
+  "kpis": [{"label": str, "value": str}],
+  "features": [{                       // one block per content feature
+    "name": str,                       // e.g. "Subject style"
+    "values": [{"label": str, "n": int, "ctr": float, "open": float}]
+  }],                                  // ctr/open as percentages (0-100)
+  "top": [{"subject": str, "delivered": int, "open": float, "ctr": float}],
+  "bottom": [ same shape as top ],
+  "insights": [str]
+}                                                                        */
+const DATA = __REPORT_DATA__;
+
+document.getElementById("title").textContent = DATA.title;
+document.getElementById("subtitle").textContent = DATA.subtitle;
+document.getElementById("kpis").innerHTML = DATA.kpis.map(k =>
+  `<div class="kpi"><div class="v">${k.value}</div><div class="l">${k.label}</div></div>`).join("");
+
+const maxCtr = Math.max(...DATA.features.flatMap(f => f.values.map(v => v.ctr)), 1);
+document.getElementById("features").innerHTML = DATA.features.map((f, i) => `
+  <div class="feature"><h3>${f.name}</h3>
+    ${f.values.map(v => `
+      <div class="row">
+        <div class="label" title="${v.label}">${v.label}</div>
+        <div class="track"><div class="fill ${i % 2 ? "alt" : ""}"
+             style="width:${Math.max(2, 100 * v.ctr / maxCtr)}%"></div></div>
+        <div class="val">${v.ctr.toFixed(1)}% <small>n=${v.n}</small></div>
+      </div>`).join("")}
+  </div>`).join("");
+
+function renderTable(id, rows) {
+  document.getElementById(id).innerHTML =
+    `<tr><th>Subject</th><th class="num">Delivered</th>
+         <th class="num">Open %</th><th class="num">CTR %</th></tr>` +
+    rows.map(r => `<tr><td>${r.subject}</td>
+      <td class="num">${r.delivered.toLocaleString()}</td>
+      <td class="num">${r.open.toFixed(1)}</td>
+      <td class="num">${r.ctr.toFixed(1)}</td></tr>`).join("");
+}
+renderTable("top-table", DATA.top);
+renderTable("bottom-table", DATA.bottom);
+document.getElementById("top-sub").textContent =
+  "Highest click-through rates (min. send threshold applied).";
+document.getElementById("bottom-sub").textContent =
+  "Lowest click-through rates — what to learn from.";
+document.getElementById("insights").innerHTML =
+  DATA.insights.map(t => `<li>${t}</li>`).join("");
+</script>
+</body>
+</html>

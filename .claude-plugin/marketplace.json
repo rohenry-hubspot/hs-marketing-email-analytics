@@ -1,0 +1,13 @@
+{
+  "name": "hs-marketing-email-analytics",
+  "owner": {
+    "name": "Romain Henry"
+  },
+  "plugins": [
+    {
+      "name": "hs-marketing-email-analytics",
+      "source": "./",
+      "description": "Retrieve and analyse HubSpot marketing email performance (aggregated statistics and time-bucketed histograms) via the Marketing Emails statistics API v2026-03."
+    }
+  ]
+}
