@@ -1,6 +1,6 @@
 {
   "name": "hs-marketing-email-analytics",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Retrieve HubSpot marketing email statistics and content, then find which emails perform better based on what they actually say (subject + body copy) via the Marketing Emails API v2026-03. Read-only by design.",
   "author": {
     "name": "Romain Henry"
