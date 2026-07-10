@@ -7,7 +7,7 @@
     {
       "name": "hs-marketing-email-analytics",
       "source": "./",
-      "description": "Retrieve and analyse HubSpot marketing email performance (aggregated statistics and time-bucketed histograms) via the Marketing Emails statistics API v2026-03."
+      "description": "Retrieve HubSpot marketing email statistics and content, then find which emails perform better based on what they actually say (subject + body copy) via the Marketing Emails API v2026-03. Read-only by design."
     }
   ]
 }

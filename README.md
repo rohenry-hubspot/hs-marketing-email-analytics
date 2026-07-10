@@ -1,17 +1,22 @@
 # HubSpot Marketing Email Analytics
 
-A Claude Code / Cowork plugin that retrieves and analyses HubSpot **marketing
-email performance** using the Marketing Emails statistics API (v2026-03):
+A Claude Code / Cowork plugin for HubSpot marketing email performance —
+built to answer not just *how* emails performed, but *why*: which subject
+lines and body copy actually drive opens and clicks. It wraps the Marketing
+Emails API (v2026-03):
 
 - **Aggregated statistics** (`/statistics/list`) — overall totals, per-campaign
   breakdowns, and the list of email IDs sent in a time range.
 - **Statistics histogram** (`/statistics/histogram`) — time-bucketed metrics
   (year down to second granularity) for trend analysis.
+- **Email details** (`GET /{emailId}`) — name, subject, and body copy for a
+  given email, the raw material for content analysis.
 
 Ask things like *"how did our emails perform in June?"*, *"show me the daily
-open-rate trend for Q2"*, or *"compare campaign performance this quarter"* and
-the bundled skill fetches the data and produces an honest analysis (rates on
-delivered, Apple MPP caveats, small-sample warnings).
+open-rate trend for Q2"*, or — the flagship use case — *"which of our emails
+perform better, and what do the winners have in common?"* and the bundled
+skill fetches the data and produces an honest analysis (rates on delivered,
+Apple MPP caveats, small-sample warnings, correlation framed as correlation).
 
 ## Installation
 
@@ -36,13 +41,18 @@ a `.env` file in your project directory:
 
 3. Keep `.env` out of version control.
 
+Optional: set `API_ROOT` (env or `.env`) to point the script at a different
+host (e.g. a proxy or sandbox) — it defaults to `https://api.hubapi.com`.
+
 ## What's inside
 
 | Component | Purpose |
 |---|---|
-| `skills/hubspot-email-stats/` | The skill: when/how to query each endpoint, semantic content analysis workflow, honest-metrics guidelines |
+| `skills/hubspot-email-stats/SKILL.md` | Entry point: auth, quick-reference fetch commands, operational rules, and routing to the references below |
 | `skills/hubspot-email-stats/scripts/email_stats.py` | Dependency-free Python fetcher (stdlib only): statistics, histograms, and per-email content+stats as JSONL; `.env` loading, retries, pagination |
 | `skills/hubspot-email-stats/references/api-details.md` | Full parameter/response schemas for all three endpoints |
+| `skills/hubspot-email-stats/references/content-analysis.md` | The dataset → semantic tagging → honest correlation workflow — how to answer "which content performs better?" |
+| `skills/hubspot-email-stats/references/reporting.md` | How to present findings: chat-answer guidelines, and generating the HTML report |
 | `skills/hubspot-email-stats/assets/report_template.html` | Self-contained HTML report template (KPIs, feature-impact charts, top/bottom emails, insights) — no external assets, light/dark aware |
 | `hooks/` | **Read-only guard**: a PreToolUse hook that blocks any write (POST/PUT/PATCH/DELETE) to the HubSpot API and any write-capable HubSpot MCP tool, since the `content` scope technically permits writes |
 

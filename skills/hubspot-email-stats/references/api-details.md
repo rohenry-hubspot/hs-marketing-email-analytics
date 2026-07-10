@@ -7,6 +7,11 @@ app access token (here: `HUBSPOT_SERVICE_KEY` from the project `.env`).
 Required scope: `content` (alternatively `marketing-email` or
 `transactional-email` per the Marketing Emails API guide).
 
+The API host defaults to `https://api.hubapi.com` and can be overridden with
+an `API_ROOT` value in the environment or project `.env` (e.g. to point at a
+proxy or sandbox host). The bundled script picks this up automatically —
+see `scripts/email_stats.py`.
+
 Note: this API only covers **marketing** emails. Sales emails sent from
 contact records are not included (those live in the Engagements API).
 Statistics match what the HubSpot app shows on a sent email's *Performance*

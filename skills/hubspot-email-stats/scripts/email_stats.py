@@ -34,35 +34,52 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
-API_ROOT = "https://api.hubapi.com/marketing/emails/2026-03"
-BASE_URL = f"{API_ROOT}/statistics"
-
-INTERVALS = [
-    "YEAR", "QUARTER", "MONTH", "WEEK", "DAY",
-    "HOUR", "QUARTER_HOUR", "MINUTE", "SECOND",
-]
+DEFAULT_API_ROOT = "https://api.hubapi.com"
 
 
-def load_service_key():
-    """Return HUBSPOT_SERVICE_KEY from env or the nearest .env file."""
-    key = os.environ.get("HUBSPOT_SERVICE_KEY")
-    if key:
-        return key
+def load_env_var(name, default=None, required=False):
+    """Return `name` from the environment or the nearest .env file.
+
+    Walks up from the current working directory looking for a .env. Env
+    vars already set in the process take priority over the .env file.
+    """
+    value = os.environ.get(name)
+    if value:
+        return value
     d = Path.cwd()
     for parent in [d, *d.parents]:
         env_file = parent / ".env"
         if env_file.is_file():
             for line in env_file.read_text().splitlines():
                 line = line.strip()
-                if line.startswith("HUBSPOT_SERVICE_KEY"):
-                    _, _, value = line.partition("=")
-                    value = value.strip().strip('"').strip("'")
-                    if value:
-                        return value
-    sys.exit(
-        "error: HUBSPOT_SERVICE_KEY not found in environment or any .env "
-        "file from the current directory upward"
-    )
+                if line.startswith(name):
+                    _, _, raw = line.partition("=")
+                    raw = raw.strip().strip('"').strip("'")
+                    if raw:
+                        return raw
+    if required:
+        sys.exit(
+            f"error: {name} not found in environment or any .env file "
+            "from the current directory upward"
+        )
+    return default
+
+
+def load_service_key():
+    """Return HUBSPOT_SERVICE_KEY from env or the nearest .env file."""
+    return load_env_var("HUBSPOT_SERVICE_KEY", required=True)
+
+
+# Allow overriding the HubSpot API host (e.g. for a proxy or sandbox) via
+# API_ROOT in the environment or project .env; defaults to the public API.
+API_ROOT = load_env_var("API_ROOT", default=DEFAULT_API_ROOT).rstrip("/")
+EMAILS_ROOT = f"{API_ROOT}/marketing/emails/2026-03"
+BASE_URL = f"{EMAILS_ROOT}/statistics"
+
+INTERVALS = [
+    "YEAR", "QUARTER", "MONTH", "WEEK", "DAY",
+    "HOUR", "QUARTER_HOUR", "MINUTE", "SECOND",
+]
 
 
 def normalize_timestamp(value, end_of_day=False):
@@ -261,7 +278,7 @@ def fetch_content(args, token, sink):
     for n, email_id in enumerate(ids, 1):
         params = [("includeStats", "true")] if include_stats else []
         try:
-            email = get_json(f"{API_ROOT}/{email_id}", params, token)
+            email = get_json(f"{EMAILS_ROOT}/{email_id}", params, token)
         except urllib.error.HTTPError as e:
             errors += 1
             print(f"warn: email {email_id}: HTTP {e.code}", file=sys.stderr)
